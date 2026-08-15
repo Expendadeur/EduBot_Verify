@@ -268,6 +268,36 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:60px 5% 3
 #mobile-menu a:last-child{border-bottom:none;color:var(--purple3)}
 .nav-mobile-btn{display:flex}
 
+
+/* ── VIDEO MODAL ── */
+#video-overlay{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0);backdrop-filter:blur(0px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:all .35s cubic-bezier(.4,0,.2,1)}
+#video-overlay.open{background:rgba(0,0,0,.92);backdrop-filter:blur(12px);opacity:1;pointer-events:all}
+.video-modal{position:relative;width:90vw;max-width:960px;border-radius:20px;overflow:hidden;background:#000;box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 80px rgba(124,58,237,.3);transform:scale(.88) translateY(30px);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+#video-overlay.open .video-modal{transform:scale(1) translateY(0)}
+.video-modal video{width:100%;display:block;max-height:80vh;object-fit:contain;background:#000}
+.video-modal-bar{position:absolute;top:0;left:0;right:0;padding:14px 16px;background:linear-gradient(180deg,rgba(0,0,0,.8),transparent);display:flex;align-items:center;justify-content:space-between;z-index:2}
+.video-modal-title{font-family:var(--font-display);font-size:14px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+.video-modal-actions{display:flex;gap:8px}
+.video-modal-btn{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;backdrop-filter:blur(8px)}
+.video-modal-btn:hover{background:rgba(255,255,255,.25)}
+.video-pip-btn{position:absolute;bottom:12px;right:12px;background:rgba(124,58,237,.85);border:1px solid rgba(124,58,237,.6);color:#fff;font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:opacity .2s;z-index:2}
+.video-pip-btn:hover{opacity:.85}
+
+/* Video button style */
+.dl-btn.video{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);color:#fff}
+.dl-btn.video:hover{background:rgba(255,255,255,.12);transform:translateY(-2px)}
+.dl-btn.video .dl-btn-icon{font-size:22px}
+
+/* Pip (mini player) */
+#video-pip{position:fixed;bottom:90px;right:24px;z-index:500;width:280px;border-radius:12px;overflow:hidden;background:#000;box-shadow:0 12px 40px rgba(0,0,0,.7),0 0 30px rgba(124,58,237,.25);display:none;flex-direction:column;resize:both}
+#video-pip.show{display:flex}
+#video-pip video{width:100%;display:block}
+#video-pip-bar{background:linear-gradient(135deg,rgba(124,58,237,.9),rgba(6,182,212,.7));padding:8px 10px;display:flex;align-items:center;justify-content:space-between}
+#video-pip-bar span{font-size:11px;font-weight:700;color:#fff}
+#video-pip-bar div{display:flex;gap:6px}
+#video-pip-bar button{background:rgba(255,255,255,.2);border:none;color:#fff;width:22px;height:22px;border-radius:5px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
+#video-pip-bar button:hover{background:rgba(255,255,255,.35)}
+
 /* ── RESPONSIVE ── */
 @media(max-width:900px){
   .hero-inner{grid-template-columns:1fr}
@@ -350,6 +380,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:60px 5% 3
       </div>
       <div class="hero-actions">
         <a href="EduBot.apk" class="btn-primary" download>📱 Download APK — Free</a>
+        <button onclick="openVideo()" class="btn-secondary" style="border:none;cursor:pointer">▶ Watch Demo</button>
         <a href="https://expendadeur.github.io/apk_edubot/" target="_blank" class="btn-secondary">🌐 Open Web App</a>
       </div>
     </div>
@@ -658,6 +689,13 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:60px 5% 3
             <div class="dl-btn-sub">Free · No Play Store needed</div>
           </div>
         </a>
+        <button onclick="openVideo()" class="dl-btn video" style="border:none;cursor:pointer">
+          <span class="dl-btn-icon">▶</span>
+          <div>
+            <div>Watch Demo Video</div>
+            <div class="dl-btn-sub">See the app in action</div>
+          </div>
+        </button>
         <a href="https://expendadeur.github.io/apk_edubot/" target="_blank" class="dl-btn web">
           <span class="dl-btn-icon">🌐</span>
           <div>
@@ -1034,6 +1072,77 @@ function setFont(font, btn) {
   document.body.style.fontFamily = fonts[font];
 }
 
+
+
+// ── VIDEO PLAYER ──
+const mainVideo = document.getElementById('main-video');
+const pipVideo  = document.getElementById('pip-video');
+const overlay   = document.getElementById('video-overlay');
+const pip       = document.getElementById('video-pip');
+let inPip = false;
+
+function openVideo() {
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  mainVideo.currentTime = pipVideo.paused ? mainVideo.currentTime : pipVideo.currentTime;
+  mainVideo.play();
+  if(inPip) { pip.classList.remove('show'); pipVideo.pause(); inPip = false; }
+}
+
+function closeVideo() {
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  mainVideo.pause();
+}
+
+function closeVideoOnOverlay(e) {
+  if(e.target === overlay) closeVideo();
+}
+
+function toggleVideoFullscreen() {
+  const modal = document.getElementById('video-modal');
+  if(!document.fullscreenElement) {
+    modal.requestFullscreen && modal.requestFullscreen();
+  } else {
+    document.exitFullscreen && document.exitFullscreen();
+  }
+}
+
+function togglePip() {
+  // Switch to mini player
+  const t = mainVideo.currentTime;
+  closeVideo();
+  pipVideo.currentTime = t;
+  pipVideo.play();
+  pip.classList.add('show');
+  inPip = true;
+}
+
+function expandPip() {
+  // Switch back to fullscreen modal
+  const t = pipVideo.currentTime;
+  pip.classList.remove('show');
+  pipVideo.pause();
+  inPip = false;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  mainVideo.currentTime = t;
+  mainVideo.play();
+}
+
+function closePip() {
+  pip.classList.remove('show');
+  pipVideo.pause();
+  inPip = false;
+}
+
+// Keyboard: Escape closes video
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') {
+    if(overlay.classList.contains('open')) closeVideo();
+  }
+});
+
 </script>
 
 <!-- SETTINGS BUTTON -->
@@ -1085,6 +1194,44 @@ function setFont(font, btn) {
       <button class="settings-chip" onclick="setFont('serif',this)">Serif</button>
     </div>
   </div>
+</div>
+
+
+<!-- VIDEO OVERLAY (fullscreen modal) -->
+<div id="video-overlay" onclick="closeVideoOnOverlay(event)">
+  <div class="video-modal" id="video-modal">
+    <div class="video-modal-bar">
+      <div class="video-modal-title">🎬 EduBot Vérif — App Demo</div>
+      <div class="video-modal-actions">
+        <button class="video-modal-btn" onclick="togglePip()" title="Mini player">⊡</button>
+        <button class="video-modal-btn" onclick="toggleVideoFullscreen()" title="Fullscreen">⛶</button>
+        <button class="video-modal-btn" onclick="closeVideo()" title="Close">✕</button>
+      </div>
+    </div>
+    <video id="main-video" controls playsinline preload="metadata">
+      <source src="demo.mp4" type="video/mp4">
+      <source src="demo.webm" type="video/webm">
+      <p style="color:#fff;padding:40px;text-align:center">
+        Votre navigateur ne supporte pas la vidéo HTML5.<br>
+        <a href="demo.mp4" style="color:var(--cyan)">Télécharger la vidéo</a>
+      </p>
+    </video>
+  </div>
+</div>
+
+<!-- PIP MINI PLAYER -->
+<div id="video-pip">
+  <div id="video-pip-bar">
+    <span>🎬 EduBot Vérif Demo</span>
+    <div>
+      <button onclick="expandPip()" title="Agrandir">⊞</button>
+      <button onclick="closePip()" title="Fermer">✕</button>
+    </div>
+  </div>
+  <video id="pip-video" controls playsinline preload="none">
+    <source src="demo.mp4" type="video/mp4">
+    <source src="demo.webm" type="video/webm">
+  </video>
 </div>
 
 </body>
