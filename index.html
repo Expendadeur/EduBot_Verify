@@ -1075,32 +1075,43 @@ function setFont(font, btn) {
 
 
 // ── VIDEO PLAYER ──
-const mainVideo = document.getElementById('main-video');
-const pipVideo  = document.getElementById('pip-video');
-const overlay   = document.getElementById('video-overlay');
-const pip       = document.getElementById('video-pip');
 let inPip = false;
 
+function $v(id){ return document.getElementById(id); }
+
 function openVideo() {
+  const overlay   = $v('video-overlay');
+  const mainVideo = $v('main-video');
+  const pipVideo  = $v('pip-video');
+  const pip       = $v('video-pip');
+  if(!overlay || !mainVideo) return;
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
-  mainVideo.currentTime = pipVideo.paused ? mainVideo.currentTime : pipVideo.currentTime;
-  mainVideo.play();
-  if(inPip) { pip.classList.remove('show'); pipVideo.pause(); inPip = false; }
+  if(inPip && pipVideo) {
+    mainVideo.currentTime = pipVideo.currentTime;
+    pipVideo.pause();
+    pip && pip.classList.remove('show');
+    inPip = false;
+  }
+  mainVideo.play().catch(()=>{});
 }
 
 function closeVideo() {
+  const overlay   = $v('video-overlay');
+  const mainVideo = $v('main-video');
+  if(!overlay) return;
   overlay.classList.remove('open');
   document.body.style.overflow = '';
-  mainVideo.pause();
+  if(mainVideo) mainVideo.pause();
 }
 
 function closeVideoOnOverlay(e) {
-  if(e.target === overlay) closeVideo();
+  if(e.target === $v('video-overlay')) closeVideo();
 }
 
 function toggleVideoFullscreen() {
-  const modal = document.getElementById('video-modal');
+  const modal = $v('video-modal');
+  if(!modal) return;
   if(!document.fullscreenElement) {
     modal.requestFullscreen && modal.requestFullscreen();
   } else {
@@ -1109,17 +1120,24 @@ function toggleVideoFullscreen() {
 }
 
 function togglePip() {
-  // Switch to mini player
+  const mainVideo = $v('main-video');
+  const pipVideo  = $v('pip-video');
+  const pip       = $v('video-pip');
+  if(!mainVideo || !pipVideo || !pip) return;
   const t = mainVideo.currentTime;
   closeVideo();
   pipVideo.currentTime = t;
-  pipVideo.play();
+  pipVideo.play().catch(()=>{});
   pip.classList.add('show');
   inPip = true;
 }
 
 function expandPip() {
-  // Switch back to fullscreen modal
+  const mainVideo = $v('main-video');
+  const pipVideo  = $v('pip-video');
+  const pip       = $v('video-pip');
+  const overlay   = $v('video-overlay');
+  if(!mainVideo || !pipVideo || !pip || !overlay) return;
   const t = pipVideo.currentTime;
   pip.classList.remove('show');
   pipVideo.pause();
@@ -1127,19 +1145,23 @@ function expandPip() {
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
   mainVideo.currentTime = t;
-  mainVideo.play();
+  mainVideo.play().catch(()=>{});
 }
 
 function closePip() {
+  const pip      = $v('video-pip');
+  const pipVideo = $v('pip-video');
+  if(!pip) return;
   pip.classList.remove('show');
-  pipVideo.pause();
+  if(pipVideo) pipVideo.pause();
   inPip = false;
 }
 
 // Keyboard: Escape closes video
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape') {
-    if(overlay.classList.contains('open')) closeVideo();
+    const overlay = $v('video-overlay');
+    if(overlay && overlay.classList.contains('open')) closeVideo();
   }
 });
 
